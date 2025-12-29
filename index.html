@@ -6,43 +6,85 @@
     <title>Faculty Attendance Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; padding-bottom: 50px; }
-        .absent-btn { width: 100px; transition: 0.3s; }
-        .is-absent { background-color: #dc3545 !important; color: white !important; }
-        .sticky-header { position: sticky; top: 0; background: white; z-index: 1000; border-bottom: 2px solid #007bff; padding: 15px; }
-        .diff-box { font-size: 0.9rem; border-left: 4px solid #ffc107; background: #fff3cd; padding: 10px; margin-top: 10px; display: none; }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sticky-header { position: sticky; top: 0; background: #ffffff; z-index: 1000; border-bottom: 4px solid #1a73e8; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn-absent { width: 85px; font-weight: 600; border-radius: 20px; transition: 0.2s; }
+        .is-absent { background-color: #d93025 !important; color: white !important; border-color: #d93025; }
+        .stats-card { background: #e8f0fe; border-radius: 10px; padding: 10px; margin-bottom: 10px; font-size: 0.9rem; }
+        .diff-area { background: #fff4e5; border: 1px dashed #ff9800; border-radius: 8px; padding: 10px; margin-bottom: 10px; display: none; }
+        .roll-row { background: white; margin-bottom: 5px; border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ccc; }
+        .roll-row.marked { border-left-color: #d93025; background: #fce8e6; }
     </style>
 </head>
 <body>
 
-<div class="sticky-header shadow-sm">
-    <div class="container">
-        <h4 class="mb-0">Attendance Tracker</h4>
-        <div class="d-flex justify-content-between align-items-center">
-            <small id="current-info" class="text-primary fw-bold">Detecting Period...</small>
-            <button class="btn btn-success btn-sm" onclick="sendToWhatsApp()">Send to WhatsApp</button>
+<div class="sticky-header">
+    <div class="container p-0">
+        <h5 class="text-primary fw-bold mb-2">Attendance Portal</h5>
+        
+        <div class="row g-2 mb-2">
+            <div class="col-6">
+                <label class="small fw-bold">Select Period & Time</label>
+                <select id="period-select" class="form-select form-select-sm" onchange="loadClassDetails()">
+                    <option value="0">P-I (9:20-10:10)</option>
+                    <option value="1">P-II (10:10-11:00)</option>
+                    <option value="2">P-III (11:10-12:00)</option>
+                    <option value="3">P-IV (12:00-12:50)</option>
+                    <option value="4">P-V (01:30-02:20)</option>
+                    <option value="5">P-VI (02:20-03:10)</option>
+                    <option value="6">P-VII (03:10-04:00)</option>
+                </select>
+            </div>
+            <div class="col-6">
+                <label class="small fw-bold">Faculty Name</label>
+                <input type="text" id="faculty-name" class="form-control form-control-sm" placeholder="Your Name">
+            </div>
         </div>
-        <div id="diff-section" class="diff-box"></div>
+
+        <div class="row g-2 mb-3">
+            <div class="col-12">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light fw-bold">Subject</span>
+                    <input type="text" id="subject-display" class="form-control bg-white">
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion mb-2" id="comparisonAcc">
+            <div class="accordion-item border-0">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed p-2 small bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDiff">
+                        Compare with Previous Hour?
+                    </button>
+                </h2>
+                <div id="collapseDiff" class="accordion-collapse collapse" data-bs-parent="#comparisonAcc">
+                    <div class="accordion-body p-2">
+                        <small class="text-muted">Paste previous roll numbers (comma separated):</small>
+                        <textarea id="prev-data-input" class="form-control form-control-sm mt-1" rows="2" placeholder="e.g. 24E15A0201, 24E15A0205" oninput="compareData()"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="diff-output" class="diff-area small"></div>
+
+        <div class="stats-card d-flex justify-content-around text-center fw-bold">
+            <div class="text-secondary">Total<br><span id="total-cnt">32</span></div>
+            <div class="text-success">Present<br><span id="pres-cnt">32</span></div>
+            <div class="text-danger">Absent<br><span id="abs-cnt">0</span></div>
+        </div>
+
+        <button class="btn btn-success w-100 fw-bold shadow-sm mt-1" onclick="sendWhatsApp()">POST TO WHATSAPP GROUP</button>
     </div>
 </div>
 
-<div class="container mt-4">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Roll No</th>
-                    <th class="text-end">Action</th>
-                </tr>
-            </thead>
-            <tbody id="roll-list">
-                </tbody>
-        </table>
-    </div>
+<div class="container mt-3 pb-5">
+    <div id="roll-container">
+        </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // 1. Roll List Data from your Image
     const rollNumbers = [
         "23E11A0201", "23E11A0202", "23E11A0204", "23E11A0205", "23E11A0207",
         "24E15A0201", "24E15A0202", "24E15A0203", "24E15A0204", "24E15A0205",
@@ -53,88 +95,108 @@
         "24E15A0227", "24E15A0228"
     ];
 
-    // 2. Timetable Mapping
     const timetable = {
         'MON': ['WSES', 'DSP', 'PSP', 'PSOC', 'FIOT', 'Aptitude', 'Bridge Class'],
         'TUE': ['PSP', 'WSES', 'FIOT', 'DSP', 'Mini Project', 'Mini Project', 'Bridge Class'],
-        'WED': ['FIOT', 'WSES', 'DSP', 'PSOC', 'Mini Project', 'Mini Project', 'Remedial'],
-        'THU': ['PSOC', 'PSP', 'CS Lab', 'CS Lab', 'ES', 'HRT', 'Remedial'],
-        'FRI': ['PSOC', 'DSP', 'DSP Lab', 'DSP Lab', 'ES', 'WSES', 'Remedial'],
+        'WED': ['FIOT', 'WSES', 'DSP', 'PSOC', 'Mini Project', 'Mini Project', 'Remedial Class'],
+        'THU': ['PSOC', 'PSP', 'CS Lab', 'CS Lab', 'ES', 'HRT', 'Remedial Class'],
+        'FRI': ['PSOC', 'DSP', 'DSP Lab', 'DSP Lab', 'ES', 'WSES', 'Remedial Class'],
         'SAT': ['FIOT', 'PSP', 'PS Lab', 'PS Lab', 'ES', 'Comm Skills', 'Gate Class']
     };
 
-    const timeSlots = ["09:20", "10:10", "11:10", "12:00", "13:30", "14:20", "15:10"];
-    
-    let currentAbsentees = new Set();
-    let prevAbsentees = JSON.parse(localStorage.getItem('lastAttendance')) || [];
+    let absentees = new Set();
 
-    // Initialize App
     function init() {
-        const now = new Date();
-        const day = ['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()];
-        const currentTime = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
-        
-        let periodIdx = timeSlots.findIndex((t, i) => currentTime >= t && (i === timeSlots.length-1 || currentTime < timeSlots[i+1]));
-        let subject = (timetable[day] && periodIdx !== -1) ? timetable[day][periodIdx] : "Free/Lunch";
-
-        document.getElementById('current-info').innerText = `${day} | Period: ${periodIdx + 1} | Subject: ${subject}`;
-
-        const listContainer = document.getElementById('roll-list');
+        const container = document.getElementById('roll-container');
         rollNumbers.forEach(roll => {
-            const row = `<tr>
-                <td>${roll}</td>
-                <td class="text-end">
-                    <button class="btn btn-outline-danger btn-sm absent-btn" onclick="toggleAbsent(this, '${roll}')">Absent</button>
-                </td>
-            </tr>`;
-            listContainer.innerHTML += row;
+            const div = document.createElement('div');
+            div.className = 'roll-row shadow-sm';
+            div.id = `row-${roll}`;
+            div.innerHTML = `
+                <span class="fw-bold text-dark">${roll}</span>
+                <button class="btn btn-outline-danger btn-sm btn-absent" onclick="mark('${roll}')">ABSENT</button>
+            `;
+            container.appendChild(div);
         });
-
-        checkDifferences();
+        loadClassDetails();
     }
 
-    function toggleAbsent(btn, roll) {
-        if (currentAbsentees.has(roll)) {
-            currentAbsentees.delete(roll);
+    function loadClassDetails() {
+        const days = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+        const day = days[new Date().getDay()];
+        const idx = document.getElementById('period-select').value;
+        const sub = (timetable[day]) ? timetable[day][idx] : "Special Class";
+        document.getElementById('subject-display').value = sub;
+    }
+
+    function mark(roll) {
+        const btn = document.querySelector(`#row-${roll} button`);
+        const row = document.getElementById(`row-${roll}`);
+        if (absentees.has(roll)) {
+            absentees.delete(roll);
             btn.classList.remove('is-absent');
-            btn.innerText = "Absent";
+            btn.innerText = "ABSENT";
+            row.classList.remove('marked');
         } else {
-            currentAbsentees.add(roll);
+            absentees.add(roll);
             btn.classList.add('is-absent');
             btn.innerText = "MARKED";
+            row.classList.add('marked');
         }
-        checkDifferences();
+        updateStats();
+        compareData();
     }
 
-    function checkDifferences() {
-        const diffBox = document.getElementById('diff-section');
-        let newAbsentees = [...currentAbsentees].filter(x => !prevAbsentees.includes(x));
-        let nowPresent = prevAbsentees.filter(x => !currentAbsentees.has(x));
-
-        if (newAbsentees.length > 0 || nowPresent.length > 0) {
-            diffBox.style.display = "block";
-            diffBox.innerHTML = `<strong>Changes:</strong><br> 
-                ${newAbsentees.length ? '新增 (New Absentees): ' + newAbsentees.join(", ") : ''} 
-                ${nowPresent.length ? '<br>Present now (was absent): ' + nowPresent.join(", ") : ''}`;
-        } else {
-            diffBox.innerHTML = "<strong>Status:</strong> No difference from previous hour.";
-            diffBox.style.display = "block";
-        }
+    function updateStats() {
+        document.getElementById('total-cnt').innerText = rollNumbers.length;
+        document.getElementById('abs-cnt').innerText = absentees.size;
+        document.getElementById('pres-cnt').innerText = rollNumbers.length - absentees.size;
     }
 
-    function sendToWhatsApp() {
-        const info = document.getElementById('current-info').innerText;
-        const absList = currentAbsentees.size > 0 ? [...currentAbsentees].join(", ") : "None";
-        const msg = encodeURIComponent(`*Attendance Report*\n${info}\n\n*Absentees:* ${absList}\n\n*Total Absent:* ${currentAbsentees.size}`);
+    function compareData() {
+        const input = document.getElementById('prev-data-input').value;
+        const output = document.getElementById('diff-output');
+        if(!input) { output.style.display = "none"; return; }
+
+        const prevList = input.split(/[ ,]+/).filter(x => x.trim().length > 0);
+        const currentList = [...absentees];
+
+        const newlyAbsent = currentList.filter(x => !prevList.includes(x));
+        const nowPresent = prevList.filter(x => !currentList.includes(x));
+
+        output.style.display = "block";
+        output.innerHTML = `<strong>Hourly Changes:</strong><br>` +
+            (newlyAbsent.length ? `❌ New Absentees: ${newlyAbsent.join(", ")}<br>` : "") +
+            (nowPresent.length ? `✅ Now Present: ${nowPresent.join(", ")}` : "");
         
-        // Save current to local storage for next period comparison
-        localStorage.setItem('lastAttendance', JSON.stringify([...currentAbsentees]));
+        if(!newlyAbsent.length && !nowPresent.length) output.innerHTML = "✅ No changes from previous hour.";
+    }
+
+    function sendWhatsApp() {
+        const pIdx = document.getElementById('period-select').value;
+        const pLabel = document.getElementById('period-select').options[pIdx].text;
+        const sub = document.getElementById('subject-display').value;
+        const fac = document.getElementById('faculty-name').value || "Class Faculty";
+        const date = new Date().toLocaleDateString();
         
-        window.open(`https://wa.me/?text=${msg}`, '_blank');
+        const absStr = absentees.size > 0 ? [...absentees].sort().join(", ") : "NIL";
+
+        const msg = `*📢 ATTENDANCE REPORT*\n` +
+                    `*📅 Date:* ${date}\n` +
+                    `*⏰ Period:* ${pLabel}\n` +
+                    `*📚 Subject:* ${sub}\n` +
+                    `*👨‍🏫 Faculty:* ${fac}\n` +
+                    `--------------------------\n` +
+                    `*✅ Present:* ${rollNumbers.length - absentees.size}\n` +
+                    `*❌ Absentees:* ${absentees.size}\n` +
+                    `--------------------------\n` +
+                    `*Roll Nos (Absentees):*\n${absStr}\n` +
+                    `--------------------------`;
+
+        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     }
 
     init();
 </script>
-
 </body>
 </html>
