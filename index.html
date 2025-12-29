@@ -3,45 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Faculty Attendance Pro</title>
+    <title>Faculty Attendance Pro - Enhanced</title>
     
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .sticky-header { position: sticky; top: 0; background: white; z-index: 1000; border-bottom: 5px solid #0056b3; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        :root {
+            --primary: #0056b3;
+            --present: #198754;
+            --absent: #dc3545;
+        }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
         
-        /* Gender Colors */
-        .boy-text { color: #0056b3; } /* Deep Blue for Boys */
-        .girl-text { color: #d63384; } /* Pink/Magenta for Girls */
+        /* Dashboard Header */
+        .sticky-header { 
+            position: sticky; top: 0; background: linear-gradient(135deg, #0056b3, #003d7a); 
+            z-index: 1000; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            color: white; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;
+        }
         
-        .roll-card { background: white; margin-bottom: 8px; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #adb5bd; transition: 0.2s; }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(5px);
+            padding: 8px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-val { font-size: 1.2rem; font-weight: 800; display: block; }
+        .stat-lbl { font-size: 0.65rem; text-transform: uppercase; opacity: 0.9; }
+
+        /* Student List UI */
+        .roll-card { 
+            background: white; margin-bottom: 10px; border-radius: 12px; 
+            padding: 12px; display: flex; justify-content: space-between; 
+            align-items: center; border-left: 5px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
         
-        .marked-present { border-left-color: #198754; background: #e9f7ef; }
-        .marked-absent { border-left-color: #dc3545; background: #fdf2f2; }
+        .marked-present { border-left-color: var(--present); background: #f0fff4; }
+        .marked-absent { border-left-color: var(--absent); background: #fff5f5; }
         
-        .stats-badge { font-size: 0.85rem; padding: 8px; border-radius: 8px; font-weight: bold; flex: 1; text-align: center; }
-        .btn-attendance { width: 55px; font-weight: bold; border-radius: 10px !important; }
-        .diff-box { background: #fff3cd; border: 1px dashed #ffc107; padding: 8px; font-size: 0.8rem; margin-top: 10px; border-radius: 8px; display: none; }
+        .boy-text { color: #004085; font-weight: 600; }
+        .girl-text { color: #b02a37; font-weight: 600; }
+
+        .btn-attendance { width: 50px; border-radius: 8px; font-weight: bold; }
+        
+        .btn-post {
+            background: #25D366; color: white; border: none;
+            padding: 8px 20px; border-radius: 20px; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
+        }
     </style>
 </head>
 <body>
 
 <div class="sticky-header">
     <div class="container p-0">
-        <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex justify-content-between align-items-start">
             <div>
-                <h6 class="mb-0 fw-bold text-dark">G.NAGARJUNA (CLASS INCHARGE)</h6>
-                <small class="text-muted" id="current-day-display"></small>
+                <h6 class="mb-0 fw-bold">G.NAGARJUNA</h6>
+                <div id="current-day-display" style="font-size: 0.75rem; opacity: 0.8;"></div>
             </div>
-            <button class="btn btn-success btn-sm fw-bold px-3 shadow-sm" onclick="sendToWhatsApp()">POST REPORT</button>
+            <button class="btn-post" onclick="sendToWhatsApp()">📤 POST REPORT</button>
         </div>
 
-        <div class="row g-2 mb-2">
+        <div class="row g-2 mt-2">
             <div class="col-4">
-                <select id="period-sel" class="form-select form-select-sm fw-bold" onchange="syncClassInfo()">
+                <select id="period-sel" class="form-select form-select-sm" onchange="syncClassInfo()">
                     <option value="0">P-I (9:20)</option>
                     <option value="1">P-II (10:10)</option>
                     <option value="2">P-III (11:10)</option>
@@ -56,15 +93,20 @@
             </div>
         </div>
 
-        <div class="d-flex gap-2 mb-2">
-            <div class="stats-badge bg-white border text-dark">Total: 32</div>
-            <div class="stats-badge bg-success text-white">P: <span id="p-count">32</span></div>
-            <div class="stats-badge bg-danger text-white">A: <span id="a-count">0</span></div>
-            <button class="btn btn-sm btn-outline-secondary" onclick="resetAll()">Clear</button>
+        <div class="stats-container">
+            <div class="stat-card">
+                <span class="stat-val">32</span>
+                <span class="stat-lbl">Total</span>
+            </div>
+            <div class="stat-card" style="background: rgba(40, 167, 69, 0.3);">
+                <span id="p-count" class="stat-val">32</span>
+                <span class="stat-lbl">Present</span>
+            </div>
+            <div class="stat-card" style="background: rgba(220, 53, 69, 0.3);">
+                <span id="a-count" class="stat-val">0</span>
+                <span class="stat-lbl">Absent</span>
+            </div>
         </div>
-
-        <input type="text" id="prev-list-input" class="form-control form-control-sm mb-1" placeholder="Paste prev absentees to compare..." oninput="calculateDiff()">
-        <div id="diff-box" class="diff-box"></div>
     </div>
 </div>
 
@@ -73,7 +115,6 @@
 </div>
 
 <script>
-    // Data from image_8777cd.png and image_7c292d.png
     const students = [
         { r: "23E11A0201", n: "BASIUDEM ARJUN REDDY", g: "B" },
         { r: "23E11A0202", n: "K RAJKUMAR", g: "B" },
@@ -109,48 +150,37 @@
         { r: "24E15A0228", n: "V CHAKRAVARTHI VARMA", g: "B" }
     ];
 
-    // From image_8712e6.png
     const facultyMap = {
-        'FIOT': 'Mr. Praburaja Ramasamy',
-        'WSES': 'Mr. G. Nagarjuna',
-        'DSP': 'Mr. Muzammil Mushtaq',
-        'PSP': 'Mrs. K Vani',
-        'PSOC': 'Dr. Praveen Tiwari',
-        'Power System Laboratory': 'Dr. Harsh Wardhan Pandey & Mr. Muzammil Mushtaq',
-        'Control Systems Laboratory': 'Mr. Muzammil Mushtaq',
-        'Digital Signal Processing Laboratory': 'Mr. Muzammil Mushtaq',
-        'Industrial Oriented Mini Project/Internship': 'Dr. Harsh Wardhan Pandey',
-        'ES': 'Mrs. D. Swathi Devi',
-        'Communication skills training': 'Dr. Nandu Parvathy',
-        'Aptitude': 'Training Cell', 'Bridge Class': 'Dept Coordinator', 'Remedial Class': 'Sub Faculty', 'HRT': 'Placement Cell', 'Gate Class': 'Gate Team'
+        'FIOT': 'Mr. Praburaja Ramasamy', 'WSES': 'Mr. G. Nagarjuna', 'DSP': 'Mr. Muzammil Mushtaq',
+        'PSP': 'Mrs. K Vani', 'PSOC': 'Dr. Praveen Tiwari', 'Power System Laboratory': 'Dr. H.W Pandey',
+        'ES': 'Mrs. D. Swathi Devi', 'Aptitude': 'Training Cell'
     };
 
-    // Timetable from image_7c306a.png
     const timetable = {
         'MON': ['WSES', 'DSP', 'PSP', 'PSOC', 'FIOT', 'Aptitude', 'Bridge Class'],
-        'TUE': ['PSP', 'WSES', 'FIOT', 'DSP', 'Industrial Oriented Mini Project/Internship', 'Industrial Oriented Mini Project/Internship', 'Bridge Class'],
-        'WED': ['FIOT', 'WSES', 'DSP', 'PSOC', 'Industrial Oriented Mini Project/Internship', 'Industrial Oriented Mini Project/Internship', 'Remedial Class'],
-        'THU': ['PSOC', 'PSP', 'Control Systems Laboratory', 'Control Systems Laboratory', 'ES', 'HRT', 'Remedial Class'],
-        'FRI': ['PSOC', 'DSP', 'Digital Signal Processing Laboratory', 'Digital Signal Processing Laboratory', 'ES', 'WSES', 'Remedial Class'],
-        'SAT': ['FIOT', 'PSP', 'Power System Laboratory', 'Power System Laboratory', 'ES', 'Communication skills training', 'Gate Class']
+        'TUE': ['PSP', 'WSES', 'FIOT', 'DSP', 'Mini Project', 'Mini Project', 'Bridge Class'],
+        'WED': ['FIOT', 'WSES', 'DSP', 'PSOC', 'Mini Project', 'Mini Project', 'Remedial Class'],
+        'THU': ['PSOC', 'PSP', 'CS Lab', 'CS Lab', 'ES', 'HRT', 'Remedial Class'],
+        'FRI': ['PSOC', 'DSP', 'DSP Lab', 'DSP Lab', 'ES', 'WSES', 'Remedial Class'],
+        'SAT': ['FIOT', 'PSP', 'PS Lab', 'PS Lab', 'ES', 'Comm skills', 'Gate Class']
     };
 
-    let attendance = {}; // Stores roll: 'P' or 'A'
+    let attendance = {};
 
     function init() {
         const listDiv = document.getElementById('student-list');
         students.forEach(s => {
-            attendance[s.r] = 'P'; // Initial state is Present
+            attendance[s.r] = 'P';
             const colorClass = s.g === 'B' ? 'boy-text' : 'girl-text';
             const div = document.createElement('div');
             div.className = 'roll-card marked-present';
             div.id = `card-${s.r}`;
             div.innerHTML = `
-                <div class="${colorClass}">
-                    <div class="fw-bold" style="font-size: 0.85rem;">${s.r}</div>
-                    <div style="font-size: 0.75rem;">${s.n}</div>
+                <div>
+                    <div class="${colorClass}" style="font-size: 0.9rem;">${s.r}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">${s.n}</div>
                 </div>
-                <div class="btn-group btn-group-sm">
+                <div class="btn-group">
                     <button class="btn btn-success btn-attendance" onclick="mark('${s.r}','P')">P</button>
                     <button class="btn btn-outline-danger btn-attendance" onclick="mark('${s.r}','A')">A</button>
                 </div>
@@ -164,25 +194,17 @@
         attendance[roll] = status;
         const card = document.getElementById(`card-${roll}`);
         const btns = card.querySelectorAll('button');
-        card.classList.remove('marked-present', 'marked-absent');
-        btns[0].className = 'btn btn-outline-success btn-attendance';
-        btns[1].className = 'btn btn-outline-danger btn-attendance';
-
-        if(status === 'P') {
-            card.classList.add('marked-present');
-            btns[0].className = 'btn btn-success btn-attendance';
-        } else {
-            card.classList.add('marked-absent');
-            btns[1].className = 'btn btn-danger btn-attendance';
-        }
+        card.classList.toggle('marked-present', status === 'P');
+        card.classList.toggle('marked-absent', status === 'A');
+        btns[0].className = status === 'P' ? 'btn btn-success btn-attendance' : 'btn btn-outline-success btn-attendance';
+        btns[1].className = status === 'A' ? 'btn btn-danger btn-attendance' : 'btn btn-outline-danger btn-attendance';
         updateStats();
-        calculateDiff();
     }
 
     function updateStats() {
         const abs = Object.values(attendance).filter(v => v === 'A').length;
         document.getElementById('a-count').innerText = abs;
-        document.getElementById('p-count').innerText = 32 - abs; // Accurate Calculation
+        document.getElementById('p-count').innerText = students.length - abs;
     }
 
     function syncClassInfo() {
@@ -194,43 +216,35 @@
         document.getElementById('current-day-display').innerText = `${d}, ${new Date().toLocaleDateString()}`;
     }
 
-    function calculateDiff() {
-        const input = document.getElementById('prev-list-input').value;
-        const box = document.getElementById('diff-box');
-        if(!input) { box.style.display = 'none'; return; }
-        
-        const prev = input.split(/[ ,]+/).filter(x => x.length > 5);
-        const curr = Object.keys(attendance).filter(k => attendance[k] === 'A');
-        
-        const newlyAbsent = curr.filter(x => !prev.includes(x));
-        const nowPresent = prev.filter(x => attendance[x] === 'P');
-
-        box.style.display = 'block';
-        box.innerHTML = `<b>Changes:</b><br>` + 
-            (newlyAbsent.length ? `❌ New Absent: ${newlyAbsent.join(", ")}<br>` : "") +
-            (nowPresent.length ? `✅ Now Present: ${nowPresent.join(", ")}` : "");
-    }
-
-    function resetAll() {
-        if(confirm("Reset all to Present?")) {
-            Object.keys(attendance).forEach(r => mark(r, 'P'));
-        }
-    }
-
     function sendToWhatsApp() {
         const info = document.getElementById('class-info-display').innerText;
         const period = document.getElementById('period-sel').options[document.getElementById('period-sel').selectedIndex].text;
-        const absList = Object.keys(attendance).filter(k => attendance[k] === 'A').sort().join(", ") || "NIL";
+        const absList = Object.keys(attendance).filter(k => attendance[k] === 'A').sort();
+        const pCount = students.length - absList.length;
+        const aCount = absList.length;
         
-        const msg = `*📊 ATTENDANCE REPORT (G.NAGARJUNA_CLASS_IC)*\n` +
-                    `*Period:* ${period}\n` +
-                    `*Class Info:* ${info}\n` +
-                    `--------------------------\n` +
-                    `*✅ Total Present:* ${document.getElementById('p-count').innerText}\n` +
-                    `*❌ Total Absent:* ${document.getElementById('a-count').innerText}\n` +
-                    `--------------------------\n` +
-                    `*Absentees Roll Nos:*\n${absList}\n` +
-                    `--------------------------`;
+        const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+        let msg = `*╔════════════════════╗*\n`;
+        msg += `*║   📊 ATTENDANCE REPORT   ║*\n`;
+        msg += `*╚════════════════════╝*\n\n`;
+        
+        msg += `*📅 Date:* ${dateStr}\n`;
+        msg += `*⏰ Period:* ${period}\n`;
+        msg += `*📘 Subject:* ${info}\n`;
+        msg += `*👤 Incharge:* G. NAGARJUNA\n`;
+        msg += `\n*─── SUMMARY STATS ───*\n`;
+        msg += `*✅ PRESENT:* ${pCount}\n`;
+        msg += `*❌ ABSENT :* ${aCount}\n`;
+        msg += `\n*─── ABSENT LIST 🔴 ───*\n`;
+        
+        if(absList.length > 0) {
+            msg += "```" + absList.join("\n") + "```";
+        } else {
+            msg += `*ALL PRESENT (NIL)*`;
+        }
+        
+        msg += `\n\n*Report Generated Successfully* ✅`;
 
         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     }
