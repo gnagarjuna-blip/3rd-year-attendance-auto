@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Attendance Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding-bottom: 50px; }
+        .absent-btn { width: 100px; transition: 0.3s; }
+        .is-absent { background-color: #dc3545 !important; color: white !important; }
+        .sticky-header { position: sticky; top: 0; background: white; z-index: 1000; border-bottom: 2px solid #007bff; padding: 15px; }
+        .diff-box { font-size: 0.9rem; border-left: 4px solid #ffc107; background: #fff3cd; padding: 10px; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="sticky-header shadow-sm">
+    <div class="container">
+        <h4 class="mb-0">Attendance Tracker</h4>
+        <div class="d-flex justify-content-between align-items-center">
+            <small id="current-info" class="text-primary fw-bold">Detecting Period...</small>
+            <button class="btn btn-success btn-sm" onclick="sendToWhatsApp()">Send to WhatsApp</button>
+        </div>
+        <div id="diff-section" class="diff-box"></div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Roll No</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody id="roll-list">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // 1. Roll List Data from your Image
+    const rollNumbers = [
+        "23E11A0201", "23E11A0202", "23E11A0204", "23E11A0205", "23E11A0207",
+        "24E15A0201", "24E15A0202", "24E15A0203", "24E15A0204", "24E15A0205",
+        "24E15A0206", "24E15A0207", "24E15A0208", "24E15A0209", "24E15A0210",
+        "24E15A0212", "24E15A0213", "24E15A0214", "24E15A0215", "24E15A0216",
+        "24E15A0217", "24E15A0218", "24E15A0219", "24E15A0220", "24E15A0221",
+        "24E15A0222", "24E15A0223", "24E15A0224", "24E15A0225", "24E15A0226",
+        "24E15A0227", "24E15A0228"
+    ];
+
+    // 2. Timetable Mapping
+    const timetable = {
+        'MON': ['WSES', 'DSP', 'PSP', 'PSOC', 'FIOT', 'Aptitude', 'Bridge Class'],
+        'TUE': ['PSP', 'WSES', 'FIOT', 'DSP', 'Mini Project', 'Mini Project', 'Bridge Class'],
+        'WED': ['FIOT', 'WSES', 'DSP', 'PSOC', 'Mini Project', 'Mini Project', 'Remedial'],
+        'THU': ['PSOC', 'PSP', 'CS Lab', 'CS Lab', 'ES', 'HRT', 'Remedial'],
+        'FRI': ['PSOC', 'DSP', 'DSP Lab', 'DSP Lab', 'ES', 'WSES', 'Remedial'],
+        'SAT': ['FIOT', 'PSP', 'PS Lab', 'PS Lab', 'ES', 'Comm Skills', 'Gate Class']
+    };
+
+    const timeSlots = ["09:20", "10:10", "11:10", "12:00", "13:30", "14:20", "15:10"];
+    
+    let currentAbsentees = new Set();
+    let prevAbsentees = JSON.parse(localStorage.getItem('lastAttendance')) || [];
+
+    // Initialize App
+    function init() {
+        const now = new Date();
+        const day = ['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()];
+        const currentTime = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
+        
+        let periodIdx = timeSlots.findIndex((t, i) => currentTime >= t && (i === timeSlots.length-1 || currentTime < timeSlots[i+1]));
+        let subject = (timetable[day] && periodIdx !== -1) ? timetable[day][periodIdx] : "Free/Lunch";
+
+        document.getElementById('current-info').innerText = `${day} | Period: ${periodIdx + 1} | Subject: ${subject}`;
+
+        const listContainer = document.getElementById('roll-list');
+        rollNumbers.forEach(roll => {
+            const row = `<tr>
+                <td>${roll}</td>
+                <td class="text-end">
+                    <button class="btn btn-outline-danger btn-sm absent-btn" onclick="toggleAbsent(this, '${roll}')">Absent</button>
+                </td>
+            </tr>`;
+            listContainer.innerHTML += row;
+        });
+
+        checkDifferences();
+    }
+
+    function toggleAbsent(btn, roll) {
+        if (currentAbsentees.has(roll)) {
+            currentAbsentees.delete(roll);
+            btn.classList.remove('is-absent');
+            btn.innerText = "Absent";
+        } else {
+            currentAbsentees.add(roll);
+            btn.classList.add('is-absent');
+            btn.innerText = "MARKED";
+        }
+        checkDifferences();
+    }
+
+    function checkDifferences() {
+        const diffBox = document.getElementById('diff-section');
+        let newAbsentees = [...currentAbsentees].filter(x => !prevAbsentees.includes(x));
+        let nowPresent = prevAbsentees.filter(x => !currentAbsentees.has(x));
+
+        if (newAbsentees.length > 0 || nowPresent.length > 0) {
+            diffBox.style.display = "block";
+            diffBox.innerHTML = `<strong>Changes:</strong><br> 
+                ${newAbsentees.length ? '新增 (New Absentees): ' + newAbsentees.join(", ") : ''} 
+                ${nowPresent.length ? '<br>Present now (was absent): ' + nowPresent.join(", ") : ''}`;
+        } else {
+            diffBox.innerHTML = "<strong>Status:</strong> No difference from previous hour.";
+            diffBox.style.display = "block";
+        }
+    }
+
+    function sendToWhatsApp() {
+        const info = document.getElementById('current-info').innerText;
+        const absList = currentAbsentees.size > 0 ? [...currentAbsentees].join(", ") : "None";
+        const msg = encodeURIComponent(`*Attendance Report*\n${info}\n\n*Absentees:* ${absList}\n\n*Total Absent:* ${currentAbsentees.size}`);
+        
+        // Save current to local storage for next period comparison
+        localStorage.setItem('lastAttendance', JSON.stringify([...currentAbsentees]));
+        
+        window.open(`https://wa.me/?text=${msg}`, '_blank');
+    }
+
+    init();
+</script>
+
+</body>
+</html>
