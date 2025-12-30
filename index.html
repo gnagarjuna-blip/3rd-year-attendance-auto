@@ -232,13 +232,17 @@
         msg += `*📅 Date:* ${dateStr}\n`;
         msg += `*⏰ Period:* ${period}\n`;
         msg += `*📘 Subject:* ${info}\n`;
-        msg += `*👤 Class Incharge:* G. NAGARJUNA\n`;
+        msg += `*👤 Class I/C:* G. NAGARJUNA\n`;
         msg += `\n*─── SUMMARY STATS ───*\n`;
        msg += `*✅ P:* ${pCount}  |  *❌ A:* ${aCount}\n`;
         msg += `\n*─── ABSENT LIST 🔴 ───*\n`;
         
         if(absList.length > 0) {
-            msg += "```" + absList.join("\n") + "```";
+            let formatted = absList.reduce((acc, curr, i) => {
+    return acc + curr.toString().padEnd(8) + ((i + 1) % 3 === 0 ? "\n" : "");
+}, "");
+
+msg += "```\n" + formatted.trim() + "\n```";
         } else {
             msg += `*ALL PRESENT (NIL)*`;
         }
