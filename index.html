@@ -217,36 +217,38 @@
     }
 
     function sendToWhatsApp() {
-        const info = document.getElementById('class-info-display').innerText;
-        const period = document.getElementById('period-sel').options[document.getElementById('period-sel').selectedIndex].text;
-        const absList = Object.keys(attendance).filter(k => attendance[k] === 'A').sort();
-        const pCount = students.length - absList.length;
-        const aCount = absList.length;
-        
-        const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const info = document.getElementById('class-info-display').innerText;
+    const period = document.getElementById('period-sel').options[document.getElementById('period-sel').selectedIndex].text;
+    const absList = Object.keys(attendance).filter(k => attendance[k] === 'A').sort();
+    const pCount = students.length - absList.length;
+    const aCount = absList.length;
+    
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-        let msg = `*╔════════════════════╗*\n`;
-        msg += `*║   📊 ATTENDANCE REPORT   ║*\n`;
-        msg += `*╚════════════════════╝*\n\n`;
-        
-        msg += `*📅 Date:* ${dateStr}\n`;
-        msg += `*⏰ Period:* ${period}\n`;
-        msg += `*📘 Subject:* ${info}\n`;
-        msg += `*👤 CLASS I/C:* G. NAGARJUNA\n`;
-        msg += `\n*─── SUMMARY STATS ───*\n`;
-       msg += `*✅ P:* ${pCount}  |  *❌ A:* ${aCount}\n`;
-        msg += `\n*─── ABSENT LIST 🔴 ───*\n`;
-        
-      msg += "```" + absList.join("\n") + "```";
-        } else {
-            msg += `*ALL PRESENT (NIL)*`;
-        }
-        
-        msg += `\n\n*Report Generated Successfully* ✅`;
-
-        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    let msg = `*╔════════════════════╗*\n`;
+    msg += `*║    📊 ATTENDANCE REPORT   ║*\n`;
+    msg += `*╚════════════════════╝*\n\n`;
+    
+    msg += `*📅 Date:* ${dateStr}\n`;
+    msg += `*⏰ Period:* ${period}\n`;
+    msg += `*📘 Subject:* ${info}\n`;
+    msg += `*👤 CLASS I/C:* G. NAGARJUNA\n`;
+    msg += `\n*─── SUMMARY STATS ───*\n`;
+    msg += `*✅ P:* ${pCount}  |  *❌ A:* ${aCount}\n`;
+    msg += `\n*─── ABSENT LIST 🔴 ───*\n`;
+    
+    // --- FIXED SECTION START ---
+    if (absList.length > 0) {
+        msg += "```" + absList.join("\n") + "```";
+    } else {
+        msg += `*ALL PRESENT (NIL)*`;
     }
+    // --- FIXED SECTION END ---
+    
+    msg += `\n\n*Report Generated Successfully* ✅`;
 
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
     init();
 </script>
 </body>
