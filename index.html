@@ -237,12 +237,20 @@
        msg += `*✅ P:* ${pCount}  |  *❌ A:* ${aCount}\n`;
         msg += `\n*─── ABSENT LIST 🔴 ───*\n`;
         
-        if(absList.length > 0) {
-            let formatted = absList.reduce((acc, curr, i) => {
-    return acc + curr.toString().padEnd(12) + ((i + 1) % 3 === 0 ? "\n" : "");
+        let lastSeries = "";
+let formatted = absList.map(num => {
+    let series = num.startsWith("23") ? "R" : (num.startsWith("24") ? "LE" : "");
+    // Only show R or LE if it's the first time that series appears
+    let label = (series !== lastSeries) ? series : "";
+    lastSeries = series;
+    return label + num.slice(-3);
+}).reduce((acc, curr, i) => {
+    // Adds a comma and ensures columns are 8 characters wide for alignment
+    let item = (curr + ",").padEnd(8); 
+    return acc + item + ((i + 1) % 3 === 0 ? "\n" : "  ");
 }, "");
 
-msg += "```\n" + formatted.trim() + "\n```";
+msg += "```\n" + formatted.trim().replace(/,$/, "") + "\n```";
         } else {
             msg += `*ALL PRESENT (NIL)*`;
         }
