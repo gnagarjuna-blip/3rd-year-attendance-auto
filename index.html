@@ -232,25 +232,12 @@
         msg += `*📅 Date:* ${dateStr}\n`;
         msg += `*⏰ Period:* ${period}\n`;
         msg += `*📘 Subject:* ${info}\n`;
-        msg += `*👤 Class I/C:* G. NAGARJUNA\n`;
+        msg += `*👤 CLASS I/C:* G. NAGARJUNA\n`;
         msg += `\n*─── SUMMARY STATS ───*\n`;
        msg += `*✅ P:* ${pCount}  |  *❌ A:* ${aCount}\n`;
         msg += `\n*─── ABSENT LIST 🔴 ───*\n`;
         
-        let lastSeries = "";
-let formatted = absList.map(num => {
-    let series = num.startsWith("23") ? "R" : (num.startsWith("24") ? "LE" : "");
-    // Only show R or LE if it's the first time that series appears
-    let label = (series !== lastSeries) ? series : "";
-    lastSeries = series;
-    return label + num.slice(-3);
-}).reduce((acc, curr, i) => {
-    // Adds a comma and ensures columns are 8 characters wide for alignment
-    let item = (curr + ",").padEnd(8); 
-    return acc + item + ((i + 1) % 3 === 0 ? "\n" : "  ");
-}, "");
-
-msg += "```\n" + formatted.trim().replace(/,$/, "") + "\n```";
+      msg += "```" + absList.join("\n") + "```";
         } else {
             msg += `*ALL PRESENT (NIL)*`;
         }
